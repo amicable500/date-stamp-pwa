@@ -1,22 +1,18 @@
 {
   "name": "L判日付スタンプ Maker",
   "short_name": "日付スタンプ",
+  "description": "L判（3:2）自動トリミング＆撮影日付一括印字ツール",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#f7f9fc",
   "theme_color": "#4a90e2",
   "icons": [
     {
-      "src": "https://via.placeholder.com/192/4a90e2/ffffff.png?text=Date",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "https://via.placeholder.com/512/4a90e2/ffffff.png?text=Date",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "src": "https://raw.githubusercontent.com/amicable500/date-stamp-pwa/main/favicon.ico",
+      "sizes": "192x192 512x512",
+      "type": "image/x-icon",
+      "purpose": "any"
     }
   ]
 }
