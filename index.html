@@ -346,7 +346,8 @@
 
       previewContainer.appendChild(card);
     }
-    // Service Worker の登録
+
+    // Service Worker の登録処理
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').catch((err) => {
