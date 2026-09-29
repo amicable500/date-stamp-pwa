@@ -1,8 +1,9 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      } catch (err) {
+        console.error('エラー:', err);
+        progressText.style.color = 'red';
+        progressText.textContent = `エラーが発生しました: ${err.message || err}`;
+      }
+=device-width, initial-scale=1.0">
   <title>L判日付スタンプ Maker</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#4a90e2">
@@ -265,7 +266,10 @@
 
       } catch (err) {
         console.error('エラー:', err);
+        progressText.style.color = 'red';
+        progressText.textContent = `エラーが発生しました: ${err.message || err}`;
       }
+
     }
 
     function getExifDate(file) {
