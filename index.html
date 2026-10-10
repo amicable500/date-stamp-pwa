@@ -345,9 +345,9 @@
       display: inline-block;
       margin-top: 4px;
     }
-    .badge-excellent { background: #dcfce7; color: #166534; } /* 600dpi以上: きれい */
-    .badge-good { background: #e0f2fe; color: #0369a1; }      /* 300~599dpi: ふつう */
-    .badge-warning { background: #fee2e2; color: #991b1b; }   /* 300dpi未満: 注意 */
+    .badge-excellent { background: #dcfce7; color: #166534; } /* 600dpi以上 */
+    .badge-good { background: #e0f2fe; color: #0369a1; }      /* 300~599dpi */
+    .badge-warning { background: #fee2e2; color: #991b1b; }   /* 300dpi未満 */
 
     .value-display {
       min-width: 50px;
@@ -682,7 +682,7 @@
     }
 
     // ==========================================
-    // 証明写真モード (正しいDPI逆算ロジック)
+    // 証明写真モード (修正済みの正しいDPI逆算ロジック)
     // ==========================================
     const idFileInput = document.getElementById('idFileInput');
     const cropEditor = document.getElementById('cropEditor');
@@ -771,7 +771,7 @@
       drawCropCanvas();
     });
 
-    // 正しいDPI計算ロジック（拡大するほどDPIが下がる）
+    // 正しいDPI算出：ズーム（拡大）するほど切り取り面積が狭くなり実質DPIが下がる
     function updateQualityAndDisplay() {
       const userZoom = parseFloat(zoomSlider.value);
       const userRotate = parseInt(rotateSlider.value, 10);
@@ -782,15 +782,18 @@
       if (!loadedSourceImg) return;
 
       const targetW_cm = parseFloat(document.getElementById('idWidth').value) || 3.0;
-      
-      // 基準解像度 (ズーム1.0のとき、出力幅ピクセル ÷ 物理幅インチ で算出されるDPI)
-      // 出力幅ピクセル = (targetW_cm / 2.54) * 400dpi (高画質出力ベース)
-      const targetW_px = (targetW_cm / 2.54) * 400;
-      
-      // プレビュー上の切り出しピクセル数がズーム倍率に反比例して変化するため、
-      // 実際の印刷DPIは 「基準DPI ÷ ユーザー拡大率」 になる
-      const baseDpiAt1x = 400; 
-      const estimatedDpi = Math.round(baseDpiAt1x / userZoom);
+      const targetH_cm = parseFloat(document.getElementById('idHeight').value) || 4.0;
+
+      // 400dpiで出力する場合の元画像のピクセル必要数（基準値）
+      const requiredSourceWidthPx = (targetW_cm / 2.54) * 400;
+
+      // プレビュー上の切り出し幅が元画像上で占める実際のピクセル数
+      // （プレビュー幅300pxを現在のスケールとズームで割ることで、元画像の切り出しサイズが求まる）
+      const actualSourceCutWidthPx = cropCanvas.width / (cropState.scale * userZoom);
+
+      // 実質DPI ＝ 400dpi × (基準の切り出し幅 ÷ 実際の切り出し幅)
+      // ※拡大（ズームイン）して実際の切り出し幅が小さくなると、DPIは低下する
+      const estimatedDpi = Math.round(400 * (requiredSourceWidthPx / actualSourceCutWidthPx));
 
       if (estimatedDpi >= 500) {
         qualityBadge.className = 'quality-badge badge-excellent';
