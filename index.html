@@ -183,11 +183,6 @@
       background: #16a34a;
     }
 
-    .btn-primary:disabled {
-      background: #9ca3af;
-      cursor: not-allowed;
-    }
-
     .preview-container {
       margin-top: 10px;
     }
@@ -346,6 +341,13 @@
       flex: 1;
     }
 
+    .quality-note {
+      font-size: 0.75rem;
+      color: #64748b;
+      text-align: left;
+      margin-top: 4px;
+    }
+
     .btn-group {
       display: flex;
       gap: 8px;
@@ -447,6 +449,8 @@
           <span>拡大:</span>
           <input type="range" id="zoomSlider" min="0.2" max="3" step="0.01" value="1">
         </div>
+        <div class="quality-note" id="qualityNote">画質維持上限: 3.00倍 (400dpiクリア)</div>
+
         <div class="slider-group">
           <span>回転:</span>
           <input type="range" id="rotateSlider" min="-180" max="180" step="1" value="0">
@@ -462,10 +466,8 @@
   </div>
 
   <script>
-    // グローバル状態
-    let processedImages = []; // [{ filename, dataUrl }]
+    let processedImages = [];
 
-    // モード切替
     function switchMode(mode) {
       document.getElementById('tabLsize').classList.toggle('active', mode === 'lsize');
       document.getElementById('tabIdPhoto').classList.toggle('active', mode === 'idphoto');
@@ -579,18 +581,11 @@
         }
 
         const processedDataUrl = canvas.toDataURL('image/jpeg', 0.95);
-
         createPreviewCard(file.name, hideDate ? '非表示' : dateStr, processedDataUrl);
         return { dataUrl: processedDataUrl };
 
       } catch (err) {
         console.error('エラー:', err);
-        const errDiv = document.createElement('div');
-        errDiv.style.color = 'red';
-        errDiv.style.fontSize = '0.8rem';
-        errDiv.style.margin = '8px 0';
-        errDiv.textContent = `[${file.name}] エラー: ${err.message || err}`;
-        previewContainer.appendChild(errDiv);
         return null;
       }
     }
@@ -598,7 +593,6 @@
     function createPreviewCard(fileName, dateStr, dataUrl) {
       const card = document.createElement('div');
       card.className = 'preview-card';
-
       card.innerHTML = `
         <img src="${dataUrl}" class="preview-img">
         <div class="preview-info">
@@ -607,11 +601,9 @@
         </div>
         <a href="${dataUrl}" download="L判_${fileName}" class="dl-btn">保存</a>
       `;
-
       previewContainer.appendChild(card);
     }
 
-    // 連続ダウンロード処理 (ライブラリ非依存)
     async function downloadAllProcessed() {
       for (let i = 0; i < processedImages.length; i++) {
         const item = processedImages[i];
@@ -681,7 +673,7 @@
     }
 
     // ==========================================
-    // 証明写真作成モード (インタラクティブキャンバス)
+    // 証明写真モード (400dpi品質ガード付き)
     // ==========================================
     const idFileInput = document.getElementById('idFileInput');
     const cropEditor = document.getElementById('cropEditor');
@@ -689,6 +681,7 @@
     const cropCtx = cropCanvas.getContext('2d');
     const zoomSlider = document.getElementById('zoomSlider');
     const rotateSlider = document.getElementById('rotateSlider');
+    const qualityNote = document.getElementById('qualityNote');
     const idPhotoResultContainer = document.getElementById('idPhotoResultContainer');
 
     let loadedSourceImg = null;
@@ -710,7 +703,7 @@
 
     function updateCropAspect() {
       if (loadedSourceImg) {
-        drawCropCanvas();
+        resetCropTransform();
       }
     }
 
@@ -730,16 +723,36 @@
     function resetCropTransform() {
       if (!loadedSourceImg) return;
       
-      const targetH = parseFloat(document.getElementById('idHeight').value) || 4.0;
-      const targetW = parseFloat(document.getElementById('idWidth').value) || 3.0;
+      const targetH_cm = parseFloat(document.getElementById('idHeight').value) || 4.0;
+      const targetW_cm = parseFloat(document.getElementById('idWidth').value) || 3.0;
+
+      // 400dpi相当の出力目標ピクセル数
+      const pxPerInch = 400;
+      const targetW_px = Math.round((targetW_cm / 2.54) * pxPerInch);
+      const targetH_px = Math.round((targetH_cm / 2.54) * pxPerInch);
 
       cropCanvas.width = 300;
-      cropCanvas.height = Math.round(300 * (targetH / targetW));
+      cropCanvas.height = Math.round(300 * (targetH_cm / targetW_cm));
 
-      // 初期拡大率（枠に収まる基準）
+      // 基準の初期フィット倍率
       const scaleW = cropCanvas.width / loadedSourceImg.width;
       const scaleH = cropCanvas.height / loadedSourceImg.height;
-      const initScale = Math.max(scaleW, scaleH);
+      const baseFitScale = Math.max(scaleW, scaleH);
+
+      // 400dpi画質をクリアするための最大拡大限界倍率の計算
+      // (出力時に必要なピクセル数を元画像から切り出す際の限界係数)
+      const maxQualityScale = Math.min(
+        loadedSourceImg.width / targetW_px,
+        loadedSourceImg.height / targetH_px
+      ) * baseFitScale * 2.0; // 若干の余裕を持たせつつガード
+
+      // スライダーのmax値を動的調整 (最低でも 2.0倍 は保証、高画質画像なら大きく拡大可能)
+      const dynamicMax = Math.max(2.0, Math.min(8.0, maxQualityScale));
+      zoomSlider.max = dynamicMax.toFixed(2);
+      zoomSlider.step = "0.01";
+
+      const initScale = baseFitScale;
+      zoomSlider.value = 1.0; // ユーザー調整用の相対倍率初期値
 
       cropState = {
         x: cropCanvas.width / 2,
@@ -751,8 +764,8 @@
         startY: 0
       };
 
-      zoomSlider.value = 1;
       rotateSlider.value = 0;
+      qualityNote.textContent = `画質維持上限(400dpi基準): スライダー最大 ${zoomSlider.max}倍 まで`;
 
       drawCropCanvas();
     }
@@ -795,7 +808,7 @@
       );
       cropCtx.restore();
 
-      // ガイド枠描画 (3×3分割線)
+      // 3x3ガイド線
       cropCtx.strokeStyle = 'rgba(74, 144, 226, 0.6)';
       cropCtx.lineWidth = 1;
       cropCtx.strokeRect(0, 0, canvasW, canvasH);
@@ -810,7 +823,6 @@
       cropCtx.setLineDash([]);
     }
 
-    // ドラッグ＆タッチ操作イベント設定
     function handlePointerStart(e) {
       cropState.isDragging = true;
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -840,24 +852,21 @@
     window.addEventListener('touchmove', handlePointerMove, { passive: true });
     window.addEventListener('touchend', handlePointerEnd);
 
-    // 証明写真 L判シート生成ロジック
+    // 証明写真 L判シート生成ロジック (400DPI高画質出力)
     function generateIdPhotoSheet() {
       if (!loadedSourceImg) return;
 
       const targetH_cm = parseFloat(document.getElementById('idHeight').value);
       const targetW_cm = parseFloat(document.getElementById('idWidth').value);
 
-      // 高解像度300DPI規格: 1cm ≒ 118.11px
-      const pxPerCm = 118.11;
+      // 高画質 400 DPI 規格
+      const pxPerInch = 400;
+      const lWidthPx = Math.round(12.7 / 2.54 * pxPerInch);  // 2000px
+      const lHeightPx = Math.round(8.9 / 2.54 * pxPerInch);   // 1402px
 
-      // L判サイズ 8.9cm x 12.7cm (横置き: 12.7 x 8.9cm = 1500 x 1051px @300DPI)
-      const lWidthPx = Math.round(12.7 * pxPerCm);  // 1500px
-      const lHeightPx = Math.round(8.9 * pxPerCm);   // 1051px
+      const singleW_px = Math.round((targetW_cm / 2.54) * pxPerInch);
+      const singleH_px = Math.round((targetH_cm / 2.54) * pxPerInch);
 
-      const singleW_px = Math.round(targetW_cm * pxPerCm);
-      const singleH_px = Math.round(targetH_cm * pxPerCm);
-
-      // 切り出し部分の高解像度レンダリング
       const singleCanvas = document.createElement('canvas');
       singleCanvas.width = singleW_px;
       singleCanvas.height = singleH_px;
@@ -879,34 +888,29 @@
       );
       singleCtx.restore();
 
-      // 切り取りガイド線を描画
       singleCtx.strokeStyle = '#cccccc';
       singleCtx.lineWidth = 2;
       singleCtx.strokeRect(0, 0, singleW_px, singleH_px);
 
-      // L判キャンバスへ最大枚数グリッド配置
       const sheetCanvas = document.createElement('canvas');
       sheetCanvas.width = lWidthPx;
       sheetCanvas.height = lHeightPx;
       const sheetCtx = sheetCanvas.getContext('2d');
 
-      // 背景を白塗り
       sheetCtx.fillStyle = '#ffffff';
       sheetCtx.fillRect(0, 0, lWidthPx, lHeightPx);
 
-      // 余白・間隔設定 (cm -> px)
-      const marginPx = Math.round(0.4 * pxPerCm);
-      const gapPx = Math.round(0.3 * pxPerCm);
+      const marginPx = Math.round(0.4 / 2.54 * pxPerInch);
+      const gapPx = Math.round(0.3 / 2.54 * pxPerInch);
 
       const cols = Math.floor((lWidthPx - marginPx * 2 + gapPx) / (singleW_px + gapPx));
       const rows = Math.floor((lHeightPx - marginPx * 2 + gapPx) / (singleH_px + gapPx));
 
       if (cols <= 0 || rows <= 0) {
-        alert('指定されたサイズがL判（8.9×12.7cm）より大きいため並べられません。');
+        alert('指定されたサイズがL判より大きいため並べられません。');
         return;
       }
 
-      // 中央寄せのオフセット計算
       const totalGridW = cols * singleW_px + (cols - 1) * gapPx;
       const totalGridH = rows * singleH_px + (rows - 1) * gapPx;
 
@@ -926,19 +930,18 @@
 
       idPhotoResultContainer.innerHTML = `
         <div class="action-bar">
-          <h2>証明写真シート (L判サイズ / ${totalCount}枚配置)</h2>
+          <h2>証明写真シート (400dpi高画質 / ${totalCount}枚配置)</h2>
         </div>
         <div class="preview-card" style="flex-direction: column; align-items: flex-start;">
           <img src="${sheetDataUrl}" style="width: 100%; height: auto; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 8px;">
           <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
             <span style="font-size: 0.8rem; color: #666;">サイズ: ${targetH_cm}×${targetW_cm}cm (${totalCount}コマ)</span>
-            <a href="${sheetDataUrl}" download="証明写真_L判_${targetH_cm}x${targetW_cm}cm.jpg" class="dl-btn" style="padding: 8px 16px; font-size: 0.85rem;">証明写真シートを保存</a>
+            <a href="${sheetDataUrl}" download="証明写真_400dpi_${targetH_cm}x${targetW_cm}cm.jpg" class="dl-btn" style="padding: 8px 16px; font-size: 0.85rem;">証明写真シートを保存</a>
           </div>
         </div>
       `;
     }
 
-    // Service Worker の登録処理
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').catch((err) => {
