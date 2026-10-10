@@ -349,12 +349,12 @@
       display: inline-block;
       margin-top: 4px;
     }
-    .badge-excellent { background: #dcfce7; color: #166534; } /* 600dpiきれい */
-    .badge-good { background: #e0f2fe; color: #0369a1; }      /* 300dpiふつう */
-    .badge-warning { background: #fee2e2; color: #991b1b; }   /* 150dpi注意 */
+    .badge-excellent { background: #dcfce7; color: #166534; }
+    .badge-good { background: #e0f2fe; color: #0369a1; }
+    .badge-warning { background: #fee2e2; color: #991b1b; }
 
     .value-display {
-      min-width: 45px;
+      min-width: 50px;
       text-align: right;
       font-weight: bold;
     }
@@ -427,9 +427,9 @@
       <div class="form-group">
         <label>プリセット選択</label>
         <div class="preset-btns">
-          <button class="preset-btn" onclick="setPreset(4.0, 3.0)">履歴書・TOEIC (4×3cm)</button>
-          <button class="preset-btn" onclick="setPreset(4.5, 3.5)">パスポート・マイナンバー (4.5×3.5cm)</button>
-          <button class="preset-btn" onclick="setPreset(3.0, 2.4)">運転免許証 (3×2.4cm)</button>
+          <button class="preset-btn" type="button" onclick="setPreset(4.0, 3.0)">履歴書・TOEIC (4×3cm)</button>
+          <button class="preset-btn" type="button" onclick="setPreset(4.5, 3.5)">パスポート・マイナンバー (4.5×3.5cm)</button>
+          <button class="preset-btn" type="button" onclick="setPreset(3.0, 2.4)">運転免許証 (3×2.4cm)</button>
         </div>
       </div>
 
@@ -463,7 +463,7 @@
           <span class="value-display" id="zoomVal">1.00x</span>
         </div>
         <div style="text-align: left;">
-          <div id="qualityBadge" class="badge-good">品質判定: 300dpi ふつう</div>
+          <div id="qualityBadge" class="quality-badge badge-good">品質判定: 300dpi ふつう</div>
         </div>
 
         <div class="slider-group">
@@ -473,8 +473,8 @@
         </div>
 
         <div class="btn-group">
-          <button class="btn-secondary" onclick="resetCropTransform()">リセット</button>
-          <button class="btn-primary" onclick="generateIdPhotoSheet()">L判プリント画像を出力</button>
+          <button class="btn-secondary" type="button" onclick="resetCropTransform()">リセット</button>
+          <button class="btn-primary" type="button" onclick="generateIdPhotoSheet()">L判プリント画像を出力</button>
         </div>
       </div>
     </div>
@@ -779,7 +779,6 @@
       drawCropCanvas();
     });
 
-    // DPI推定と品質バッジ・数値の更新
     function updateQualityAndDisplay() {
       const userZoom = parseFloat(zoomSlider.value);
       const userRotate = parseInt(rotateSlider.value, 10);
@@ -792,7 +791,6 @@
       const targetH_cm = parseFloat(document.getElementById('idHeight').value) || 4.0;
       const targetW_cm = parseFloat(document.getElementById('idWidth').value) || 3.0;
 
-      // 300DPIベースでのピクセル数から推定DPIを算出
       const base300Px = (targetW_cm / 2.54) * 300;
       const currentCropPx = (cropCanvas.width / (cropState.scale * userZoom));
       const estimatedDpi = Math.round(300 * (base300Px / currentCropPx));
@@ -839,7 +837,6 @@
       );
       cropCtx.restore();
 
-      // 3x3ガイド線
       cropCtx.strokeStyle = 'rgba(74, 144, 226, 0.6)';
       cropCtx.lineWidth = 1;
       cropCtx.strokeRect(0, 0, canvasW, canvasH);
@@ -931,7 +928,6 @@
       sheetCtx.fillRect(0, 0, lWidthPx, lHeightPx);
 
       const marginPx = Math.round(0.4 / 2.54 * pxPerInch);
-      const gapPx = Math.round(0.3 / 2.54 * pxPerInstaller = 0 ? 0.3 : 0.3 / 2.54 * pxPerInch); // 修正安全値
       const actualGap = Math.round(0.3 / 2.54 * pxPerInch);
 
       const cols = Math.floor((lWidthPx - marginPx * 2 + actualGap) / (singleW_px + actualGap));
