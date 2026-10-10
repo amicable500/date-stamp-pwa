@@ -345,9 +345,9 @@
       display: inline-block;
       margin-top: 4px;
     }
-    .badge-excellent { background: #dcfce7; color: #166534; } /* 400dpi以上: きれい */
-    .badge-good { background: #e0f2fe; color: #0369a1; }      /* 250~399dpi: ふつう */
-    .badge-warning { background: #fee2e2; color: #991b1b; }   /* 250dpi未満: 注意 */
+    .badge-excellent { background: #dcfce7; color: #166534; } /* 300dpi以上: 非常にきれい */
+    .badge-good { background: #e0f2fe; color: #0369a1; }      /* 150~299dpi: ふつう */
+    .badge-warning { background: #fee2e2; color: #991b1b; }   /* 150dpi未満: 注意 */
 
     .value-display {
       min-width: 50px;
@@ -682,7 +682,7 @@
     }
 
     // ==========================================
-    // 証明写真モード (基準300dpiを拡大率で割る正しい判定ロジック)
+    // 証明写真モード (元画像の実際の解像度ベースのDPI判定)
     // ==========================================
     const idFileInput = document.getElementById('idFileInput');
     const cropEditor = document.getElementById('cropEditor');
@@ -771,7 +771,7 @@
       drawCropCanvas();
     });
 
-    // 基準300dpiを現在のユーザー拡大率（userZoom）で割ることで、拡大するほどDPIが下がり、縮小で上がる
+    // 元画像の実際の解像度とズーム倍率から正確な実質DPIを算出
     function updateQualityAndDisplay() {
       const userZoom = parseFloat(zoomSlider.value);
       const userRotate = parseInt(rotateSlider.value, 10);
@@ -781,14 +781,23 @@
 
       if (!loadedSourceImg) return;
 
-      const estimatedDpi = Math.round(300 / userZoom);
+      const targetW_cm = parseFloat(document.getElementById('idWidth').value) || 3.0;
 
-      if (estimatedDpi >= 400) {
+      // プレビュー上の枠（300px）が、現在のズーム状態で元画像の何ピクセル分を切り抜いているか
+      const sourceCutWidthPx = cropCanvas.width / (cropState.scale * userZoom);
+
+      // 証明写真の横幅の物理サイズ（インチ）
+      const targetW_inch = targetW_cm / 2.54;
+
+      // 実質DPI = 切り出し元ピクセル数 ÷ 証明写真の物理インチ数
+      const estimatedDpi = Math.round(sourceCutWidthPx / targetW_inch);
+
+      if (estimatedDpi >= 300) {
         qualityBadge.className = 'quality-badge badge-excellent';
         qualityBadge.textContent = `印刷品質: 約${estimatedDpi}dpi (✨ 非常にきれい)`;
-      } else if (estimatedDpi >= 200) {
+      } else if (estimatedDpi >= 150) {
         qualityBadge.className = 'quality-badge badge-good';
-        qualityBadge.textContent = `印刷品質: 約${estimatedDpi}dpi (👍 300dpi標準・ふつう)`;
+        qualityBadge.textContent = `印刷品質: 約${estimatedDpi}dpi (👍 標準・ふつう)`;
       } else {
         qualityBadge.className = 'quality-badge badge-warning';
         qualityBadge.textContent = `印刷品質: 約${estimatedDpi}dpi (⚠️ 拡大しすぎで荒れます)`;
