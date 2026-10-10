@@ -340,14 +340,14 @@
     .quality-badge {
       font-size: 0.75rem;
       font-weight: bold;
-      padding: 3px 8px;
+      padding: 4px 10px;
       border-radius: 4px;
       display: inline-block;
       margin-top: 4px;
     }
-    .badge-excellent { background: #dcfce7; color: #166534; } /* 600dpi以上 */
-    .badge-good { background: #e0f2fe; color: #0369a1; }      /* 300~599dpi */
-    .badge-warning { background: #fee2e2; color: #991b1b; }   /* 300dpi未満 */
+    .badge-excellent { background: #dcfce7; color: #166534; } /* 400dpi以上: きれい */
+    .badge-good { background: #e0f2fe; color: #0369a1; }      /* 250~399dpi: ふつう */
+    .badge-warning { background: #fee2e2; color: #991b1b; }   /* 250dpi未満: 注意 */
 
     .value-display {
       min-width: 50px;
@@ -682,7 +682,7 @@
     }
 
     // ==========================================
-    // 証明写真モード (修正済みの正しいDPI逆算ロジック)
+    // 証明写真モード (修正済みの正しいDPI判定ロジック)
     // ==========================================
     const idFileInput = document.getElementById('idFileInput');
     const cropEditor = document.getElementById('cropEditor');
@@ -771,7 +771,8 @@
       drawCropCanvas();
     });
 
-    // 正しいDPI算出：ズーム（拡大）するほど切り取り面積が狭くなり実質DPIが下がる
+    // 正しいDPI算出ロジック：
+    // 枠内のピクセル数（元画像から切り出す実サイズ）をベースに、300dpi基準で評価する
     function updateQualityAndDisplay() {
       const userZoom = parseFloat(zoomSlider.value);
       const userRotate = parseInt(rotateSlider.value, 10);
@@ -782,28 +783,27 @@
       if (!loadedSourceImg) return;
 
       const targetW_cm = parseFloat(document.getElementById('idWidth').value) || 3.0;
-      const targetH_cm = parseFloat(document.getElementById('idHeight').value) || 4.0;
 
-      // 400dpiで出力する場合の元画像のピクセル必要数（基準値）
-      const requiredSourceWidthPx = (targetW_cm / 2.54) * 400;
+      // 300dpi出力時に必要な元画像の横幅ピクセル数（基準）
+      const requiredWidthPx300 = (targetW_cm / 2.54) * 300;
 
-      // プレビュー上の切り出し幅が元画像上で占める実際のピクセル数
-      // （プレビュー幅300pxを現在のスケールとズームで割ることで、元画像の切り出しサイズが求まる）
+      // 現在のズーム・スケール状態で、プレビュー枠（300px）が元画像上で切り取っている実際のピクセル幅
+      // ※ズームイン（拡大）すると切り出し幅が狭くなり、ズームアウト（縮小）すると広くなる
       const actualSourceCutWidthPx = cropCanvas.width / (cropState.scale * userZoom);
 
-      // 実質DPI ＝ 400dpi × (基準の切り出し幅 ÷ 実際の切り出し幅)
-      // ※拡大（ズームイン）して実際の切り出し幅が小さくなると、DPIは低下する
-      const estimatedDpi = Math.round(400 * (requiredSourceWidthPx / actualSourceCutWidthPx));
+      // 実質DPI = 300dpi × (元画像の許容切り出し幅 ÷ 実際に切り出している幅)
+      // 拡大して切り出し幅が狭くなるとDPIが下がり、引いて広くなるとDPIが上がります
+      const estimatedDpi = Math.round(300 * (requiredWidthPx300 / actualSourceCutWidthPx));
 
-      if (estimatedDpi >= 500) {
+      if (estimatedDpi >= 400) {
         qualityBadge.className = 'quality-badge badge-excellent';
-        qualityBadge.textContent = `品質判定: 約${estimatedDpi}dpi (✨ 非常に入念・きれい)`;
+        qualityBadge.textContent = `印刷品質: 約${estimatedDpi}dpi (✨ 非常にきれい)`;
       } else if (estimatedDpi >= 250) {
         qualityBadge.className = 'quality-badge badge-good';
-        qualityBadge.textContent = `品質判定: 約${estimatedDpi}dpi (👍 300dpi基準・ふつう)`;
+        qualityBadge.textContent = `印刷品質: 約${estimatedDpi}dpi (👍 300dpi標準・ふつう)`;
       } else {
         qualityBadge.className = 'quality-badge badge-warning';
-        qualityBadge.textContent = `品質判定: 約${estimatedDpi}dpi (⚠️ 拡大しすぎで荒れます)`;
+        qualityBadge.textContent = `印刷品質: 約${estimatedDpi}dpi (⚠️ 拡大しすぎで荒れます)`;
       }
     }
 
@@ -880,14 +880,14 @@
     window.addEventListener('touchmove', handlePointerMove, { passive: true });
     window.addEventListener('touchend', handlePointerEnd);
 
-    // 証明写真 L判シート生成ロジック (プロ高画質 400DPI)
+    // 証明写真 L判シート生成ロジック (300DPI高画質出力)
     function generateIdPhotoSheet() {
       if (!loadedSourceImg) return;
 
       const targetH_cm = parseFloat(document.getElementById('idHeight').value);
       const targetW_cm = parseFloat(document.getElementById('idWidth').value);
 
-      const pxPerInch = 400;
+      const pxPerInch = 300; // 印刷標準300DPI
       const lWidthPx = Math.round(12.7 / 2.54 * pxPerInch);
       const lHeightPx = Math.round(8.9 / 2.54 * pxPerInch);
 
@@ -957,13 +957,13 @@
 
       idPhotoResultContainer.innerHTML = `
         <div class="action-bar">
-          <h2>証明写真シート (400dpi高画質 / ${totalCount}枚配置)</h2>
+          <h2>証明写真シート (300dpi / ${totalCount}枚配置)</h2>
         </div>
         <div class="preview-card" style="flex-direction: column; align-items: flex-start;">
           <img src="${sheetDataUrl}" style="width: 100%; height: auto; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 8px;">
           <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
             <span style="font-size: 0.8rem; color: #666;">サイズ: ${targetH_cm}×${targetW_cm}cm (${totalCount}コマ)</span>
-            <a href="${sheetDataUrl}" download="証明写真_400dpi_${targetH_cm}x${targetW_cm}cm.jpg" class="dl-btn" style="padding: 8px 16px; font-size: 0.85rem;">証明写真シートを保存</a>
+            <a href="${sheetDataUrl}" download="証明写真_300dpi_${targetH_cm}x${targetW_cm}cm.jpg" class="dl-btn" style="padding: 8px 16px; font-size: 0.85rem;">証明写真シートを保存</a>
           </div>
         </div>
       `;
