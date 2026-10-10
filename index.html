@@ -13,7 +13,7 @@
 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>L判日付スタンプ Maker</title>
+  <title>L判日付スタンプ & 証明写真 Maker</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#4a90e2">
   <style>
@@ -23,6 +23,7 @@
       --card-bg: #ffffff;
       --text-color: #333333;
       --accent-color: #ff7a00;
+      --border-color: #cbd5e1;
     }
 
     * {
@@ -35,46 +36,101 @@
     body {
       background-color: var(--bg-color);
       color: var(--text-color);
-      padding: 20px;
-      max-width: 600px;
+      padding: 20px 15px;
+      max-width: 650px;
       margin: 0 auto;
     }
 
     header {
       text-align: center;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
 
     h1 {
-      font-size: 1.5rem;
+      font-size: 1.4rem;
       color: var(--primary-color);
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
 
     p.subtitle {
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       color: #666;
     }
 
     .notice-card {
       background: #eef6ff;
       border-left: 4px solid var(--primary-color);
-      padding: 12px;
+      padding: 10px 12px;
       border-radius: 4px;
-      font-size: 0.8rem;
-      margin-bottom: 20px;
+      font-size: 0.78rem;
+      margin-bottom: 16px;
       line-height: 1.4;
+    }
+
+    /* モード切替タブ */
+    .tab-container {
+      display: flex;
+      background: #e2e8f0;
+      border-radius: 8px;
+      padding: 3px;
+      margin-bottom: 16px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      background: transparent;
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: #64748b;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      background: var(--card-bg);
+      color: var(--primary-color);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .mode-section {
+      display: none;
+    }
+
+    .mode-section.active {
+      display: block;
+    }
+
+    /* オプションパネル */
+    .option-card {
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      border: 1px solid var(--border-color);
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      cursor: pointer;
     }
 
     .upload-area {
       background: var(--card-bg);
-      border: 2px dashed #cbd5e1;
+      border: 2px dashed var(--border-color);
       border-radius: 12px;
-      padding: 30px 20px;
+      padding: 24px 16px;
       text-align: center;
       cursor: pointer;
       transition: border-color 0.2s;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
 
     .upload-area:hover {
@@ -82,8 +138,8 @@
     }
 
     .upload-icon {
-      font-size: 2.5rem;
-      margin-bottom: 8px;
+      font-size: 2.2rem;
+      margin-bottom: 6px;
     }
 
     input[type="file"] {
@@ -91,22 +147,56 @@
     }
 
     .progress {
-      margin-top: 15px;
-      font-size: 0.9rem;
+      margin-top: 10px;
+      font-size: 0.85rem;
       text-align: center;
       font-weight: bold;
       color: var(--primary-color);
     }
 
+    .action-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 20px;
+      margin-bottom: 12px;
+    }
+
+    .action-bar h2 {
+      font-size: 1rem;
+      color: var(--text-color);
+    }
+
+    .btn-primary {
+      background: #22c55e;
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-primary:hover {
+      background: #16a34a;
+    }
+
+    .btn-primary:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+
     .preview-container {
-      margin-top: 24px;
+      margin-top: 10px;
     }
 
     .preview-card {
       background: var(--card-bg);
       border-radius: 8px;
       padding: 12px;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.05);
       display: flex;
       align-items: center;
@@ -150,70 +240,297 @@
       font-weight: bold;
       white-space: nowrap;
     }
+
+    /* 証明写真モード設定 */
+    .idphoto-form {
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+      border: 1px solid var(--border-color);
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .preset-btns {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .preset-btn {
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+
+    .preset-btn:hover {
+      background: #e2e8f0;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .input-row input[type="number"] {
+      width: 80px;
+      padding: 6px 8px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+
+    /* トリミングキャンバスエリア */
+    .crop-editor {
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+      border: 1px solid var(--border-color);
+      text-align: center;
+    }
+
+    .canvas-container {
+      position: relative;
+      display: inline-block;
+      max-width: 100%;
+      overflow: hidden;
+      touch-action: none;
+      background: #000;
+      border-radius: 4px;
+      margin: 10px 0;
+    }
+
+    #cropCanvas {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      margin: 0 auto;
+      cursor: grab;
+    }
+
+    #cropCanvas:active {
+      cursor: grabbing;
+    }
+
+    .controls-row {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .slider-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+    }
+
+    .slider-group input[type="range"] {
+      flex: 1;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .btn-secondary {
+      background: #64748b;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>L判日付スタンプ Maker</h1>
-    <p class="subtitle">L判（3:2）自動トリミング ＆ 撮影日付一括印字</p>
+    <h1>L判日付スタンプ & 証明写真 Maker</h1>
+    <p class="subtitle">自動L判トリミング・日付印字 ＆ 証明写真レイアウト作成</p>
   </header>
 
   <div class="notice-card">
     🔒 <strong>安心のローカル処理:</strong> 写真データはサーバーに送信されず、すべてお使いのスマホ・PC内で処理されます。
   </div>
 
-  <div class="upload-area" onclick="document.getElementById('fileInput').click()">
-    <div class="upload-icon">📷</div>
-    <p><strong>タップして写真を選択</strong></p>
-    <p style="font-size: 0.75rem; color: #888; margin-top: 4px;">(複数選択可 / JPG画像に対応)</p>
-    <input type="file" id="fileInput" multiple accept="image/jpeg, image/jpg">
+  <!-- タブ切替 -->
+  <div class="tab-container">
+    <button class="tab-btn active" id="tabLsize" onclick="switchMode('lsize')">L判日付スタンプ</button>
+    <button class="tab-btn" id="tabIdPhoto" onclick="switchMode('idphoto')">証明写真作成</button>
   </div>
 
-  <div class="progress" id="progressText"></div>
+  <!-- ================= L判モード ================= -->
+  <div id="modeLsize" class="mode-section active">
+    <div class="option-card">
+      <label class="checkbox-label">
+        <input type="checkbox" id="hideDateOption">
+        日付を印字しない（L判トリミングのみ）
+      </label>
+    </div>
 
-  <div class="preview-container" id="previewContainer"></div>
+    <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+      <div class="upload-icon">📷</div>
+      <p><strong>タップして写真を選択</strong></p>
+      <p style="font-size: 0.75rem; color: #888; margin-top: 4px;">(複数選択可 / JPG画像に対応)</p>
+      <input type="file" id="fileInput" multiple accept="image/jpeg, image/jpg">
+    </div>
+
+    <div class="progress" id="progressText"></div>
+
+    <div class="action-bar" id="actionBar" style="display: none;">
+      <h2>処理結果</h2>
+      <button class="btn-primary" id="btnBatchDownload" onclick="downloadAllProcessed()">一括保存</button>
+    </div>
+
+    <div class="preview-container" id="previewContainer"></div>
+  </div>
+
+  <!-- ================= 証明写真モード ================= -->
+  <div id="modeIdPhoto" class="mode-section">
+    <div class="idphoto-form">
+      <div class="form-group">
+        <label>プリセット選択</label>
+        <div class="preset-btns">
+          <button class="preset-btn" onclick="setPreset(4.0, 3.0)">履歴書・TOEIC (4×3cm)</button>
+          <button class="preset-btn" onclick="setPreset(4.5, 3.5)">パスポート・マイナンバー (4.5×3.5cm)</button>
+          <button class="preset-btn" onclick="setPreset(3.0, 2.4)">運転免許証 (3×2.4cm)</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>サイズ指定 (縦 × 横 cm)</label>
+        <div class="input-row">
+          <input type="number" id="idHeight" value="4.0" step="0.1" min="1" max="10" onchange="updateCropAspect()"> cm
+          <span>×</span>
+          <input type="number" id="idWidth" value="3.0" step="0.1" min="1" max="10" onchange="updateCropAspect()"> cm
+        </div>
+      </div>
+
+      <div class="upload-area" style="padding: 16px; margin-bottom: 0;" onclick="document.getElementById('idFileInput').click()">
+        <p><strong>証明写真用の画像を選択</strong></p>
+        <input type="file" id="idFileInput" accept="image/jpeg, image/png, image/jpg">
+      </div>
+    </div>
+
+    <!-- 編集キャンバス -->
+    <div class="crop-editor" id="cropEditor" style="display: none;">
+      <p style="font-size: 0.8rem; color: #666; margin-bottom: 8px;">枠内をドラッグ/タッチ操作で位置調整・縮小拡大回転してください</p>
+      
+      <div class="canvas-container">
+        <canvas id="cropCanvas"></canvas>
+      </div>
+
+      <div class="controls-row">
+        <div class="slider-group">
+          <span>拡大:</span>
+          <input type="range" id="zoomSlider" min="0.2" max="3" step="0.01" value="1">
+        </div>
+        <div class="slider-group">
+          <span>回転:</span>
+          <input type="range" id="rotateSlider" min="-180" max="180" step="1" value="0">
+        </div>
+        <div class="btn-group">
+          <button class="btn-secondary" onclick="resetCropTransform()">リセット</button>
+          <button class="btn-primary" onclick="generateIdPhotoSheet()">L判プリント画像を出力</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="preview-container" id="idPhotoResultContainer"></div>
+  </div>
 
   <script>
+    // グローバル状態
+    let processedImages = []; // [{ filename, dataUrl }]
+
+    // モード切替
+    function switchMode(mode) {
+      document.getElementById('tabLsize').classList.toggle('active', mode === 'lsize');
+      document.getElementById('tabIdPhoto').classList.toggle('active', mode === 'idphoto');
+      document.getElementById('modeLsize').classList.toggle('active', mode === 'lsize');
+      document.getElementById('modeIdPhoto').classList.toggle('active', mode === 'idphoto');
+    }
+
+    // ==========================================
+    // L判日付スタンプ & 一括処理
+    // ==========================================
     const fileInput = document.getElementById('fileInput');
     const previewContainer = document.getElementById('previewContainer');
     const progressText = document.getElementById('progressText');
+    const hideDateOption = document.getElementById('hideDateOption');
+    const actionBar = document.getElementById('actionBar');
 
     fileInput.addEventListener('change', async (e) => {
       const files = Array.from(e.target.files);
       if (files.length === 0) return;
 
       previewContainer.innerHTML = '';
+      processedImages = [];
+      actionBar.style.display = 'none';
+
       progressText.style.color = 'var(--primary-color)';
       progressText.textContent = `処理中... (0 / ${files.length})`;
 
       let successCount = 0;
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const success = await processImage(file);
-        if (success) successCount++;
+        const result = await processImage(file, hideDateOption.checked);
+        if (result) {
+          successCount++;
+          processedImages.push({
+            filename: `L判_${file.name}`,
+            dataUrl: result.dataUrl
+          });
+        }
         progressText.textContent = `処理中... (${i + 1} / ${files.length})`;
       }
 
       if (successCount === 0) {
         progressText.style.color = 'red';
-        progressText.textContent = '画像の処理に失敗しました。詳細エラーをご確認ください。';
+        progressText.textContent = '画像の処理に失敗しました。';
       } else {
         progressText.style.color = 'var(--primary-color)';
         progressText.textContent = `全 ${files.length} 枚中 ${successCount} 枚の処理が完了しました！`;
+        if (processedImages.length > 0) {
+          actionBar.style.display = 'flex';
+        }
       }
     });
 
-    async function processImage(file) {
+    async function processImage(file, hideDate) {
       try {
-        let dateStr = await getExifDate(file);
-        if (!dateStr) {
-          const d = new Date(file.lastModified);
-          dateStr = `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
+        let dateStr = '';
+        if (!hideDate) {
+          dateStr = await getExifDate(file);
+          if (!dateStr) {
+            const d = new Date(file.lastModified);
+            dateStr = `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
+          }
         }
 
         const img = await loadImage(file);
-
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
 
@@ -239,30 +556,32 @@
 
         ctx.drawImage(img, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
 
-        const minDimension = Math.min(cropWidth, cropHeight);
-        const fontSize = Math.round(minDimension * 0.05);
-        const margin = Math.round(minDimension * 0.06);
+        if (!hideDate && dateStr) {
+          const minDimension = Math.min(cropWidth, cropHeight);
+          const fontSize = Math.round(minDimension * 0.05);
+          const margin = Math.round(minDimension * 0.06);
 
-        ctx.font = `bold ${fontSize}px sans-serif`;
-        ctx.textBaseline = 'bottom';
+          ctx.font = `bold ${fontSize}px sans-serif`;
+          ctx.textBaseline = 'bottom';
 
-        const textMetrics = ctx.measureText(dateStr);
-        const textWidth = textMetrics.width;
+          const textMetrics = ctx.measureText(dateStr);
+          const textWidth = textMetrics.width;
 
-        const x = cropWidth - textWidth - margin;
-        const y = cropHeight - margin;
+          const x = cropWidth - textWidth - margin;
+          const y = cropHeight - margin;
 
-        ctx.strokeStyle = '#000000';
-        ctx.lineWidth = Math.max(2, Math.round(fontSize * 0.08));
-        ctx.strokeText(dateStr, x, y);
+          ctx.strokeStyle = '#000000';
+          ctx.lineWidth = Math.max(2, Math.round(fontSize * 0.08));
+          ctx.strokeText(dateStr, x, y);
 
-        ctx.fillStyle = '#ff7a00';
-        ctx.fillText(dateStr, x, y);
+          ctx.fillStyle = '#ff7a00';
+          ctx.fillText(dateStr, x, y);
+        }
 
         const processedDataUrl = canvas.toDataURL('image/jpeg', 0.95);
 
-        createPreviewCard(file.name, dateStr, processedDataUrl);
-        return true;
+        createPreviewCard(file.name, hideDate ? '非表示' : dateStr, processedDataUrl);
+        return { dataUrl: processedDataUrl };
 
       } catch (err) {
         console.error('エラー:', err);
@@ -272,7 +591,37 @@
         errDiv.style.margin = '8px 0';
         errDiv.textContent = `[${file.name}] エラー: ${err.message || err}`;
         previewContainer.appendChild(errDiv);
-        return false;
+        return null;
+      }
+    }
+
+    function createPreviewCard(fileName, dateStr, dataUrl) {
+      const card = document.createElement('div');
+      card.className = 'preview-card';
+
+      card.innerHTML = `
+        <img src="${dataUrl}" class="preview-img">
+        <div class="preview-info">
+          <div class="preview-filename">${fileName}</div>
+          <div class="preview-date">印字日付: ${dateStr}</div>
+        </div>
+        <a href="${dataUrl}" download="L判_${fileName}" class="dl-btn">保存</a>
+      `;
+
+      previewContainer.appendChild(card);
+    }
+
+    // 連続ダウンロード処理 (ライブラリ非依存)
+    async function downloadAllProcessed() {
+      for (let i = 0; i < processedImages.length; i++) {
+        const item = processedImages[i];
+        const a = document.createElement('a');
+        a.href = item.dataUrl;
+        a.download = item.filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        await new Promise(resolve => setTimeout(resolve, 300));
       }
     }
 
@@ -326,25 +675,267 @@
       return new Promise((resolve, reject) => {
         const img = new Image();
         img.onload = () => resolve(img);
-        img.onerror = () => reject(new Error('画像の読み込みに失敗しました（形式未対応または破損）'));
+        img.onerror = () => reject(new Error('画像の読み込みに失敗しました'));
         img.src = URL.createObjectURL(file);
       });
     }
 
-    function createPreviewCard(fileName, dateStr, dataUrl) {
-      const card = document.createElement('div');
-      card.className = 'preview-card';
+    // ==========================================
+    // 証明写真作成モード (インタラクティブキャンバス)
+    // ==========================================
+    const idFileInput = document.getElementById('idFileInput');
+    const cropEditor = document.getElementById('cropEditor');
+    const cropCanvas = document.getElementById('cropCanvas');
+    const cropCtx = cropCanvas.getContext('2d');
+    const zoomSlider = document.getElementById('zoomSlider');
+    const rotateSlider = document.getElementById('rotateSlider');
+    const idPhotoResultContainer = document.getElementById('idPhotoResultContainer');
 
-      card.innerHTML = `
-        <img src="${dataUrl}" class="preview-img">
-        <div class="preview-info">
-          <div class="preview-filename">${fileName}</div>
-          <div class="preview-date">印字日付: ${dateStr}</div>
+    let loadedSourceImg = null;
+    let cropState = {
+      x: 0,
+      y: 0,
+      scale: 1,
+      rotate: 0,
+      isDragging: false,
+      startX: 0,
+      startY: 0
+    };
+
+    function setPreset(h, w) {
+      document.getElementById('idHeight').value = h;
+      document.getElementById('idWidth').value = w;
+      updateCropAspect();
+    }
+
+    function updateCropAspect() {
+      if (loadedSourceImg) {
+        drawCropCanvas();
+      }
+    }
+
+    idFileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      try {
+        loadedSourceImg = await loadImage(file);
+        cropEditor.style.display = 'block';
+        resetCropTransform();
+      } catch (err) {
+        alert('画像の読み込みに失敗しました。');
+      }
+    });
+
+    function resetCropTransform() {
+      if (!loadedSourceImg) return;
+      
+      const targetH = parseFloat(document.getElementById('idHeight').value) || 4.0;
+      const targetW = parseFloat(document.getElementById('idWidth').value) || 3.0;
+
+      cropCanvas.width = 300;
+      cropCanvas.height = Math.round(300 * (targetH / targetW));
+
+      // 初期拡大率（枠に収まる基準）
+      const scaleW = cropCanvas.width / loadedSourceImg.width;
+      const scaleH = cropCanvas.height / loadedSourceImg.height;
+      const initScale = Math.max(scaleW, scaleH);
+
+      cropState = {
+        x: cropCanvas.width / 2,
+        y: cropCanvas.height / 2,
+        scale: initScale,
+        rotate: 0,
+        isDragging: false,
+        startX: 0,
+        startY: 0
+      };
+
+      zoomSlider.value = 1;
+      rotateSlider.value = 0;
+
+      drawCropCanvas();
+    }
+
+    zoomSlider.addEventListener('input', () => {
+      drawCropCanvas();
+    });
+
+    rotateSlider.addEventListener('input', () => {
+      drawCropCanvas();
+    });
+
+    function drawCropCanvas() {
+      if (!loadedSourceImg) return;
+
+      const targetH = parseFloat(document.getElementById('idHeight').value) || 4.0;
+      const targetW = parseFloat(document.getElementById('idWidth').value) || 3.0;
+
+      const canvasW = 300;
+      const canvasH = Math.round(300 * (targetH / targetW));
+
+      cropCanvas.width = canvasW;
+      cropCanvas.height = canvasH;
+
+      cropCtx.clearRect(0, 0, canvasW, canvasH);
+
+      cropCtx.save();
+      cropCtx.translate(cropState.x, cropState.y);
+
+      const userZoom = parseFloat(zoomSlider.value);
+      const userRotate = parseInt(rotateSlider.value, 10);
+
+      cropCtx.rotate((userRotate * Math.PI) / 180);
+      cropCtx.scale(cropState.scale * userZoom, cropState.scale * userZoom);
+
+      cropCtx.drawImage(
+        loadedSourceImg,
+        -loadedSourceImg.width / 2,
+        -loadedSourceImg.height / 2
+      );
+      cropCtx.restore();
+
+      // ガイド枠描画 (3×3分割線)
+      cropCtx.strokeStyle = 'rgba(74, 144, 226, 0.6)';
+      cropCtx.lineWidth = 1;
+      cropCtx.strokeRect(0, 0, canvasW, canvasH);
+
+      cropCtx.beginPath();
+      cropCtx.moveTo(canvasW / 3, 0); cropCtx.lineTo(canvasW / 3, canvasH);
+      cropCtx.moveTo((canvasW * 2) / 3, 0); cropCtx.lineTo((canvasW * 2) / 3, canvasH);
+      cropCtx.moveTo(0, canvasH / 3); cropCtx.lineTo(canvasW, canvasH / 3);
+      cropCtx.moveTo(0, (canvasH * 2) / 3); cropCtx.lineTo(canvasW, (canvasH * 2) / 3);
+      cropCtx.setLineDash([4, 4]);
+      cropCtx.stroke();
+      cropCtx.setLineDash([]);
+    }
+
+    // ドラッグ＆タッチ操作イベント設定
+    function handlePointerStart(e) {
+      cropState.isDragging = true;
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      cropState.startX = clientX - cropState.x;
+      cropState.startY = clientY - cropState.y;
+    }
+
+    function handlePointerMove(e) {
+      if (!cropState.isDragging) return;
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      cropState.x = clientX - cropState.startX;
+      cropState.y = clientY - cropState.startY;
+      drawCropCanvas();
+    }
+
+    function handlePointerEnd() {
+      cropState.isDragging = false;
+    }
+
+    cropCanvas.addEventListener('mousedown', handlePointerStart);
+    window.addEventListener('mousemove', handlePointerMove);
+    window.addEventListener('mouseup', handlePointerEnd);
+
+    cropCanvas.addEventListener('touchstart', handlePointerStart, { passive: true });
+    window.addEventListener('touchmove', handlePointerMove, { passive: true });
+    window.addEventListener('touchend', handlePointerEnd);
+
+    // 証明写真 L判シート生成ロジック
+    function generateIdPhotoSheet() {
+      if (!loadedSourceImg) return;
+
+      const targetH_cm = parseFloat(document.getElementById('idHeight').value);
+      const targetW_cm = parseFloat(document.getElementById('idWidth').value);
+
+      // 高解像度300DPI規格: 1cm ≒ 118.11px
+      const pxPerCm = 118.11;
+
+      // L判サイズ 8.9cm x 12.7cm (横置き: 12.7 x 8.9cm = 1500 x 1051px @300DPI)
+      const lWidthPx = Math.round(12.7 * pxPerCm);  // 1500px
+      const lHeightPx = Math.round(8.9 * pxPerCm);   // 1051px
+
+      const singleW_px = Math.round(targetW_cm * pxPerCm);
+      const singleH_px = Math.round(targetH_cm * pxPerCm);
+
+      // 切り出し部分の高解像度レンダリング
+      const singleCanvas = document.createElement('canvas');
+      singleCanvas.width = singleW_px;
+      singleCanvas.height = singleH_px;
+      const singleCtx = singleCanvas.getContext('2d');
+
+      const userZoom = parseFloat(zoomSlider.value);
+      const userRotate = parseInt(rotateSlider.value, 10);
+      const previewCanvasW = cropCanvas.width;
+      const renderScale = singleW_px / previewCanvasW;
+
+      singleCtx.save();
+      singleCtx.translate(cropState.x * renderScale, cropState.y * renderScale);
+      singleCtx.rotate((userRotate * Math.PI) / 180);
+      singleCtx.scale(cropState.scale * userZoom * renderScale, cropState.scale * userZoom * renderScale);
+      singleCtx.drawImage(
+        loadedSourceImg,
+        -loadedSourceImg.width / 2,
+        -loadedSourceImg.height / 2
+      );
+      singleCtx.restore();
+
+      // 切り取りガイド線を描画
+      singleCtx.strokeStyle = '#cccccc';
+      singleCtx.lineWidth = 2;
+      singleCtx.strokeRect(0, 0, singleW_px, singleH_px);
+
+      // L判キャンバスへ最大枚数グリッド配置
+      const sheetCanvas = document.createElement('canvas');
+      sheetCanvas.width = lWidthPx;
+      sheetCanvas.height = lHeightPx;
+      const sheetCtx = sheetCanvas.getContext('2d');
+
+      // 背景を白塗り
+      sheetCtx.fillStyle = '#ffffff';
+      sheetCtx.fillRect(0, 0, lWidthPx, lHeightPx);
+
+      // 余白・間隔設定 (cm -> px)
+      const marginPx = Math.round(0.4 * pxPerCm);
+      const gapPx = Math.round(0.3 * pxPerCm);
+
+      const cols = Math.floor((lWidthPx - marginPx * 2 + gapPx) / (singleW_px + gapPx));
+      const rows = Math.floor((lHeightPx - marginPx * 2 + gapPx) / (singleH_px + gapPx));
+
+      if (cols <= 0 || rows <= 0) {
+        alert('指定されたサイズがL判（8.9×12.7cm）より大きいため並べられません。');
+        return;
+      }
+
+      // 中央寄せのオフセット計算
+      const totalGridW = cols * singleW_px + (cols - 1) * gapPx;
+      const totalGridH = rows * singleH_px + (rows - 1) * gapPx;
+
+      const startX = Math.round((lWidthPx - totalGridW) / 2);
+      const startY = Math.round((lHeightPx - totalGridH) / 2);
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const x = startX + c * (singleW_px + gapPx);
+          const y = startY + r * (singleH_px + gapPx);
+          sheetCtx.drawImage(singleCanvas, x, y);
+        }
+      }
+
+      const sheetDataUrl = sheetCanvas.toDataURL('image/jpeg', 0.98);
+      const totalCount = cols * rows;
+
+      idPhotoResultContainer.innerHTML = `
+        <div class="action-bar">
+          <h2>証明写真シート (L判サイズ / ${totalCount}枚配置)</h2>
         </div>
-        <a href="${dataUrl}" download="L判_${fileName}" class="dl-btn">保存</a>
+        <div class="preview-card" style="flex-direction: column; align-items: flex-start;">
+          <img src="${sheetDataUrl}" style="width: 100%; height: auto; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 8px;">
+          <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+            <span style="font-size: 0.8rem; color: #666;">サイズ: ${targetH_cm}×${targetW_cm}cm (${totalCount}コマ)</span>
+            <a href="${sheetDataUrl}" download="証明写真_L判_${targetH_cm}x${targetW_cm}cm.jpg" class="dl-btn" style="padding: 8px 16px; font-size: 0.85rem;">証明写真シートを保存</a>
+          </div>
+        </div>
       `;
-
-      previewContainer.appendChild(card);
     }
 
     // Service Worker の登録処理
