@@ -682,7 +682,7 @@
     }
 
     // ==========================================
-    // 証明写真モード (修正済みの正しいDPI判定ロジック)
+    // 証明写真モード (基準300dpiを拡大率で割る正しい判定ロジック)
     // ==========================================
     const idFileInput = document.getElementById('idFileInput');
     const cropEditor = document.getElementById('cropEditor');
@@ -771,8 +771,7 @@
       drawCropCanvas();
     });
 
-    // 正しいDPI算出ロジック：
-    // 枠内のピクセル数（元画像から切り出す実サイズ）をベースに、300dpi基準で評価する
+    // 基準300dpiを現在のユーザー拡大率（userZoom）で割ることで、拡大するほどDPIが下がり、縮小で上がる
     function updateQualityAndDisplay() {
       const userZoom = parseFloat(zoomSlider.value);
       const userRotate = parseInt(rotateSlider.value, 10);
@@ -782,23 +781,12 @@
 
       if (!loadedSourceImg) return;
 
-      const targetW_cm = parseFloat(document.getElementById('idWidth').value) || 3.0;
-
-      // 300dpi出力時に必要な元画像の横幅ピクセル数（基準）
-      const requiredWidthPx300 = (targetW_cm / 2.54) * 300;
-
-      // 現在のズーム・スケール状態で、プレビュー枠（300px）が元画像上で切り取っている実際のピクセル幅
-      // ※ズームイン（拡大）すると切り出し幅が狭くなり、ズームアウト（縮小）すると広くなる
-      const actualSourceCutWidthPx = cropCanvas.width / (cropState.scale * userZoom);
-
-      // 実質DPI = 300dpi × (元画像の許容切り出し幅 ÷ 実際に切り出している幅)
-      // 拡大して切り出し幅が狭くなるとDPIが下がり、引いて広くなるとDPIが上がります
-      const estimatedDpi = Math.round(300 * (requiredWidthPx300 / actualSourceCutWidthPx));
+      const estimatedDpi = Math.round(300 / userZoom);
 
       if (estimatedDpi >= 400) {
         qualityBadge.className = 'quality-badge badge-excellent';
         qualityBadge.textContent = `印刷品質: 約${estimatedDpi}dpi (✨ 非常にきれい)`;
-      } else if (estimatedDpi >= 250) {
+      } else if (estimatedDpi >= 200) {
         qualityBadge.className = 'quality-badge badge-good';
         qualityBadge.textContent = `印刷品質: 約${estimatedDpi}dpi (👍 300dpi標準・ふつう)`;
       } else {
