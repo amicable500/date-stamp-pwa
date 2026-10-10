@@ -326,7 +326,7 @@
     .controls-row {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
       margin-top: 12px;
     }
 
@@ -341,17 +341,29 @@
       flex: 1;
     }
 
-    .quality-note {
+    .quality-badge {
       font-size: 0.75rem;
-      color: #64748b;
-      text-align: left;
+      font-weight: bold;
+      padding: 3px 8px;
+      border-radius: 4px;
+      display: inline-block;
       margin-top: 4px;
+    }
+    .badge-excellent { background: #dcfce7; color: #166534; } /* 600dpiきれい */
+    .badge-good { background: #e0f2fe; color: #0369a1; }      /* 300dpiふつう */
+    .badge-warning { background: #fee2e2; color: #991b1b; }   /* 150dpi注意 */
+
+    .value-display {
+      min-width: 45px;
+      text-align: right;
+      font-weight: bold;
     }
 
     .btn-group {
       display: flex;
       gap: 8px;
       justify-content: center;
+      margin-top: 6px;
     }
 
     .btn-secondary {
@@ -447,14 +459,19 @@
       <div class="controls-row">
         <div class="slider-group">
           <span>拡大:</span>
-          <input type="range" id="zoomSlider" min="0.2" max="3" step="0.01" value="1">
+          <input type="range" id="zoomSlider" min="0.2" max="6" step="0.01" value="1">
+          <span class="value-display" id="zoomVal">1.00x</span>
         </div>
-        <div class="quality-note" id="qualityNote">画質維持上限: 3.00倍 (400dpiクリア)</div>
+        <div style="text-align: left;">
+          <div id="qualityBadge" class="badge-good">品質判定: 300dpi ふつう</div>
+        </div>
 
         <div class="slider-group">
           <span>回転:</span>
           <input type="range" id="rotateSlider" min="-180" max="180" step="1" value="0">
+          <span class="value-display" id="rotateVal">0°</span>
         </div>
+
         <div class="btn-group">
           <button class="btn-secondary" onclick="resetCropTransform()">リセット</button>
           <button class="btn-primary" onclick="generateIdPhotoSheet()">L判プリント画像を出力</button>
@@ -673,7 +690,7 @@
     }
 
     // ==========================================
-    // 証明写真モード (400dpi品質ガード付き)
+    // 証明写真モード (DPI品質バッジ & 角度表示付き)
     // ==========================================
     const idFileInput = document.getElementById('idFileInput');
     const cropEditor = document.getElementById('cropEditor');
@@ -681,7 +698,9 @@
     const cropCtx = cropCanvas.getContext('2d');
     const zoomSlider = document.getElementById('zoomSlider');
     const rotateSlider = document.getElementById('rotateSlider');
-    const qualityNote = document.getElementById('qualityNote');
+    const zoomVal = document.getElementById('zoomVal');
+    const rotateVal = document.getElementById('rotateVal');
+    const qualityBadge = document.getElementById('qualityBadge');
     const idPhotoResultContainer = document.getElementById('idPhotoResultContainer');
 
     let loadedSourceImg = null;
@@ -726,33 +745,15 @@
       const targetH_cm = parseFloat(document.getElementById('idHeight').value) || 4.0;
       const targetW_cm = parseFloat(document.getElementById('idWidth').value) || 3.0;
 
-      // 400dpi相当の出力目標ピクセル数
-      const pxPerInch = 400;
-      const targetW_px = Math.round((targetW_cm / 2.54) * pxPerInch);
-      const targetH_px = Math.round((targetH_cm / 2.54) * pxPerInch);
-
       cropCanvas.width = 300;
       cropCanvas.height = Math.round(300 * (targetH_cm / targetW_cm));
 
-      // 基準の初期フィット倍率
       const scaleW = cropCanvas.width / loadedSourceImg.width;
       const scaleH = cropCanvas.height / loadedSourceImg.height;
-      const baseFitScale = Math.max(scaleW, scaleH);
+      const initScale = Math.max(scaleW, scaleH);
 
-      // 400dpi画質をクリアするための最大拡大限界倍率の計算
-      // (出力時に必要なピクセル数を元画像から切り出す際の限界係数)
-      const maxQualityScale = Math.min(
-        loadedSourceImg.width / targetW_px,
-        loadedSourceImg.height / targetH_px
-      ) * baseFitScale * 2.0; // 若干の余裕を持たせつつガード
-
-      // スライダーのmax値を動的調整 (最低でも 2.0倍 は保証、高画質画像なら大きく拡大可能)
-      const dynamicMax = Math.max(2.0, Math.min(8.0, maxQualityScale));
-      zoomSlider.max = dynamicMax.toFixed(2);
-      zoomSlider.step = "0.01";
-
-      const initScale = baseFitScale;
-      zoomSlider.value = 1.0; // ユーザー調整用の相対倍率初期値
+      zoomSlider.value = 1.0;
+      rotateSlider.value = 0;
 
       cropState = {
         x: cropCanvas.width / 2,
@@ -764,19 +765,49 @@
         startY: 0
       };
 
-      rotateSlider.value = 0;
-      qualityNote.textContent = `画質維持上限(400dpi基準): スライダー最大 ${zoomSlider.max}倍 まで`;
-
+      updateQualityAndDisplay();
       drawCropCanvas();
     }
 
     zoomSlider.addEventListener('input', () => {
+      updateQualityAndDisplay();
       drawCropCanvas();
     });
 
     rotateSlider.addEventListener('input', () => {
+      updateQualityAndDisplay();
       drawCropCanvas();
     });
+
+    // DPI推定と品質バッジ・数値の更新
+    function updateQualityAndDisplay() {
+      const userZoom = parseFloat(zoomSlider.value);
+      const userRotate = parseInt(rotateSlider.value, 10);
+
+      zoomVal.textContent = userZoom.toFixed(2) + 'x';
+      rotateVal.textContent = (userRotate > 0 ? '+' : '') + userRotate + '°';
+
+      if (!loadedSourceImg) return;
+
+      const targetH_cm = parseFloat(document.getElementById('idHeight').value) || 4.0;
+      const targetW_cm = parseFloat(document.getElementById('idWidth').value) || 3.0;
+
+      // 300DPIベースでのピクセル数から推定DPIを算出
+      const base300Px = (targetW_cm / 2.54) * 300;
+      const currentCropPx = (cropCanvas.width / (cropState.scale * userZoom));
+      const estimatedDpi = Math.round(300 * (base300Px / currentCropPx));
+
+      if (estimatedDpi >= 500) {
+        qualityBadge.className = 'quality-badge badge-excellent';
+        qualityBadge.textContent = `品質判定: ${estimatedDpi}dpi (✨ 非常にきれい)`;
+      } else if (estimatedDpi >= 250) {
+        qualityBadge.className = 'quality-badge badge-good';
+        qualityBadge.textContent = `品質判定: ${estimatedDpi}dpi (👍 ふつう・標準)`;
+      } else {
+        qualityBadge.className = 'quality-badge badge-warning';
+        qualityBadge.textContent = `品質判定: ${estimatedDpi}dpi (⚠️ 拡大しすぎで荒れます)`;
+      }
+    }
 
     function drawCropCanvas() {
       if (!loadedSourceImg) return;
@@ -852,17 +883,16 @@
     window.addEventListener('touchmove', handlePointerMove, { passive: true });
     window.addEventListener('touchend', handlePointerEnd);
 
-    // 証明写真 L判シート生成ロジック (400DPI高画質出力)
+    // 証明写真 L判シート生成ロジック (プロ高画質 400DPI)
     function generateIdPhotoSheet() {
       if (!loadedSourceImg) return;
 
       const targetH_cm = parseFloat(document.getElementById('idHeight').value);
       const targetW_cm = parseFloat(document.getElementById('idWidth').value);
 
-      // 高画質 400 DPI 規格
       const pxPerInch = 400;
-      const lWidthPx = Math.round(12.7 / 2.54 * pxPerInch);  // 2000px
-      const lHeightPx = Math.round(8.9 / 2.54 * pxPerInch);   // 1402px
+      const lWidthPx = Math.round(12.7 / 2.54 * pxPerInch);
+      const lHeightPx = Math.round(8.9 / 2.54 * pxPerInch);
 
       const singleW_px = Math.round((targetW_cm / 2.54) * pxPerInch);
       const singleH_px = Math.round((targetH_cm / 2.54) * pxPerInch);
@@ -901,26 +931,27 @@
       sheetCtx.fillRect(0, 0, lWidthPx, lHeightPx);
 
       const marginPx = Math.round(0.4 / 2.54 * pxPerInch);
-      const gapPx = Math.round(0.3 / 2.54 * pxPerInch);
+      const gapPx = Math.round(0.3 / 2.54 * pxPerInstaller = 0 ? 0.3 : 0.3 / 2.54 * pxPerInch); // 修正安全値
+      const actualGap = Math.round(0.3 / 2.54 * pxPerInch);
 
-      const cols = Math.floor((lWidthPx - marginPx * 2 + gapPx) / (singleW_px + gapPx));
-      const rows = Math.floor((lHeightPx - marginPx * 2 + gapPx) / (singleH_px + gapPx));
+      const cols = Math.floor((lWidthPx - marginPx * 2 + actualGap) / (singleW_px + actualGap));
+      const rows = Math.floor((lHeightPx - marginPx * 2 + actualGap) / (singleH_px + actualGap));
 
       if (cols <= 0 || rows <= 0) {
         alert('指定されたサイズがL判より大きいため並べられません。');
         return;
       }
 
-      const totalGridW = cols * singleW_px + (cols - 1) * gapPx;
-      const totalGridH = rows * singleH_px + (rows - 1) * gapPx;
+      const totalGridW = cols * singleW_px + (cols - 1) * actualGap;
+      const totalGridH = rows * singleH_px + (rows - 1) * actualGap;
 
       const startX = Math.round((lWidthPx - totalGridW) / 2);
       const startY = Math.round((lHeightPx - totalGridH) / 2);
 
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
-          const x = startX + c * (singleW_px + gapPx);
-          const y = startY + r * (singleH_px + gapPx);
+          const x = startX + c * (singleW_px + actualGap);
+          const y = startY + r * (singleH_px + actualGap);
           sheetCtx.drawImage(singleCanvas, x, y);
         }
       }
